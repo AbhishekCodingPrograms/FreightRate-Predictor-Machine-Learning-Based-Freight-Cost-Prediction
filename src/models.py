@@ -1,6 +1,7 @@
 import numpy as np
-import pandas as pd
-from typing import Dict, List
+import pandas as pd  # type: ignore  # pyrefly: ignore
+from typing import Dict, List, Optional
+
 from lightgbm import LGBMRegressor
 from catboost import CatBoostRegressor
 from xgboost import XGBRegressor
@@ -9,7 +10,8 @@ from src import config
 
 
 class FreightRateEnsemble:
-    def __init__(self, weights: Dict[str, float] = None):
+    def __init__(self, weights: Optional[Dict[str, float]] = None):
+
         self.weights = weights or {"lgbm": 0.4, "catboost": 0.4, "xgboost": 0.2}
 
         self.lgbm = LGBMRegressor(**config.LGBM_PARAMS)

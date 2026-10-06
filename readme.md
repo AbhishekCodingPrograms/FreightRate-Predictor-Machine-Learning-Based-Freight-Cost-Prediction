@@ -1,117 +1,190 @@
-# Spotter Freight Rate Predictor
+# FreightRate Predictor - Enterprise Machine Learning & Spot Rate SaaS Platform
 
-A Machine Learning pipeline for spot freight rate prediction (`posted_rate`) built with **LightGBM**, **CatBoost**, and **XGBoost** using a residual target formulation.
+Production-grade Machine Learning pipeline, FastAPI REST API, PostgreSQL persistence engine, and modern Next.js App Router frontend for spot freight rate forecasting (`posted_rate`).
+
+Built with **Next.js 16 (App Router)**, **TypeScript**, **Tailwind CSS**, **FastAPI**, **PostgreSQL**, **SQLAlchemy 2.x**, **Alembic**, **LightGBM**, **CatBoost**, **XGBoost**, **Docker**, **Nginx**, and **GitHub Actions**.
 
 ---
 
-## 📌 Project Architecture
+## 📌 Architecture & Modular Layout
 
 ```
 freight-rate-predictor/
 │
-├── data/
-│   ├── train-test.csv
-│   ├── validation.csv
-│   ├── validation-predictions-template.csv
-│   └── december-chart-inputs.csv
+├── frontend/                       # Next.js App Router Frontend (Phase 4)
+│   ├── app/                        # App Router Pages (/, /predict, /batch, /history, /models)
+│   ├── components/                 # UI, Layout, Form, Table, and Modal Components
+│   ├── lib/                        # Typed API Client, TypeScript Interfaces, Utilities
+│   ├── public/                     # Static Assets
+│   ├── Dockerfile                  # Multi-Stage Production Frontend Dockerfile
+│   ├── package.json                # Dependencies & Scripts
+│   └── tsconfig.json               # TypeScript Configuration
 │
-├── src/
-│   ├── __init__.py
-│   ├── config.py
-│   ├── data_loader.py
-│   ├── preprocessing.py
-│   ├── features.py
-│   ├── validation.py
-│   ├── models.py
-│   ├── train.py
-│   ├── predict.py
-│   └── evaluate.py
+├── app/                            # FastAPI Application (Phase 2 & Phase 3)
+│   ├── main.py                     # FastAPI setup, middleware, CORS, lifespan, routes
+│   ├── config.py                   # Pydantic Settings & environment configuration
+│   ├── dependencies.py             # Dependency injection container
+│   ├── core/                       # Logger, Middleware, Exceptions
+│   ├── db/                         # Database engine, SQLAlchemy 2.x models, repositories
+│   ├── schemas/                    # Pydantic validation request & response schemas
+│   ├── services/                   # Model artifact lifecycle & prediction engine
+│   └── api/v1/                     # Health, Prediction, and Model endpoints
 │
-├── notebooks/
-│   └── 01_eda.ipynb
+├── nginx/                          # Reverse Proxy (Phase 5)
+│   └── nginx.conf                  # Nginx routing (/ -> Frontend, /api/ -> Backend, Security Headers)
 │
-├── reports/
-│   └── freight_rate_report.pdf
+├── docs/                           # Documentation & Checklists
+│   └── PRODUCTION_CHECKLIST.md     # Production Gate & Infrastructure Verification Checklist
 │
-├── outputs/
-│   ├── validation_predictions.csv
-│   ├── december_predictions.csv
-│   └── candidate_december.png
+├── migrations/                     # Alembic Database Schema Migrations
+│   ├── env.py                      # Migration environment configuration
+│   └── versions/                   # Versioned schema migration files
 │
-├── tests/
-│   ├── test_features.py
-│   ├── test_predictions.py
-│   └── test_data.py
+├── artifacts/                      # Serialized ML Artifacts (Phase 1)
+│   ├── freight_rate_model.joblib   # Trained ensemble model & scaler pipeline
+│   └── model_metadata.json         # Feature definitions and validation metrics
 │
-├── requirements.txt
-├── README.md
-├── .gitignore
-└── main.py
+├── data/                           # Datasets
+│   ├── train-test.csv              # Historical load records (48,000 rows)
+│   ├── validation.csv              # Target validation loads (12,000 rows)
+│   └── december-chart-inputs.csv   # December forecast inputs
+│
+├── scripts/
+│   ├── benchmark_api.py            # API latency & throughput benchmark script
+│   └── smoke_test.py               # Automated end-to-end production smoke test
+│
+├── .github/workflows/              # CI/CD Workflows (Phase 5)
+│   ├── ci.yml                      # Unified Pytest, Frontend Lint/Build & Docker CI
+│   └── deploy.yml                  # Zero-downtime deployment pipeline template
+│
+├── Dockerfile                      # Backend FastAPI Production Multi-stage Dockerfile
+├── docker-compose.yml              # Local Multi-Container Development Orchestrator
+├── docker-compose.prod.yml         # Production Container Overrides (Resource limits, network isolation)
+├── .env.example                    # Environment variable configuration template
+├── .gitignore                      # Security-audited git ignore rules
+├── score.py                        # ML December Immutability & Evaluation benchmark
+├── main.py                         # ML pipeline assessment wrapper
+└── pyproject.toml / requirements.txt
 ```
 
 ---
 
-## 🚀 Quick Start & Installation
+## 🏗️ System Architecture
 
-### 1. Install Dependencies
-Ensure Python 3.10+ is installed, then run:
+```
+                    INTERNET / CLIENT
+                           │
+                           ▼
+                  Nginx Reverse Proxy
+                (Port 80 / 443, SSL/TLS)
+                           │
+         ┌─────────────────┴─────────────────┐
+         ▼                                   ▼
+Next.js App Router                  FastAPI REST API
+ (Frontend Container)              (Backend Container)
+         │                                   │
+         │ HTTP API                          ├──────────────────┐
+         └─────────────────────────►         ▼                  ▼
+                                     ML Artifacts         PostgreSQL
+                                     (.joblib)            (Database Container)
+```
 
+---
+
+## 🗄️ Database Technology & Schema
+
+### Technology Stack
+- **Database Engine:** PostgreSQL 16 (or SQLite in-memory for testing)
+- **ORM & Repository Layer:** SQLAlchemy 2.x declarative models with clean repository pattern
+- **Database Migrations:** Alembic schema versioning
+
+### Schema Definition
+1. **`model_versions`**: Persistent registry of deployed ML models and validation metrics.
+2. **`prediction_requests`**: Operational audit log for single and batch predictions.
+3. **`predictions`**: Individual load predictions, confidence intervals, and sanitized input payloads.
+
+---
+
+## 🚀 Quick Start & Development
+
+### 1. Local Python & Next.js Development
+Backend:
 ```bash
+# Install Python dependencies
 pip install -r requirements.txt
+
+# Run database migrations
+alembic upgrade head
+
+# Start FastAPI backend
+uvicorn app.main:app --reload --port 8000
 ```
 
-### 2. Execute Full Pipeline
-Run `main.py` to train models, evaluate performance, generate predictions for `validation.csv` and `december-chart-inputs.csv`, and execute `score.py` verification:
-
+Frontend:
 ```bash
-python main.py
+cd frontend
+npm install
+npm run dev
 ```
 
-### 3. Run Validation Scorer Manually
-To execute Spotter's scorer script directly:
-
+### 2. Docker Compose Multi-Container Orchestration
+Spin up the complete production architecture locally (PostgreSQL + FastAPI + Next.js + Nginx):
 ```bash
-python score.py --predictions validation_predictions.csv --december-predictions data/december_chart_inputs.csv
+docker compose up --build
 ```
+Access the application:
+- **Web Dashboard:** `http://localhost`
+- **API Documentation (Swagger):** `http://localhost/api/v1/docs` or `http://localhost:8000/docs`
+- **Health Check:** `http://localhost/health`
 
-### 4. Run Pytest Test Suite
-To verify data integrity, feature engineering, and output schemas:
+---
 
+## 🧪 Testing & Quality Gate Commands
+
+Run complete backend pytest suite (41 tests):
 ```bash
 pytest tests/
 ```
 
----
+Run frontend linting & production build validation:
+```bash
+cd frontend
+npm run lint
+npm run build
+```
 
-## 📊 Modeling Approach & Key Innovations
+Run automated end-to-end production smoke test:
+```bash
+python scripts/smoke_test.py
+```
 
-### 1. Residual Signal Target Formulation
-Analysis revealed a strong multiplicative relationship between load distance ($d$) and proprietary quote multiplier ($S_q$). The baseline signal $S_{base} = d \times S_q$ accounts for >79% of raw rate variance ($R^2 = 0.7941$).
-Instead of modeling raw rates directly, our pipeline models the residual offset:
-$$\Delta y = y_{posted} - (distance \times quote\_signal)$$
-This formulation reduced Out-Of-Time MAPE from **11.37% down to 6.58%**.
-
-### 2. Out-Of-Time (OOT) Temporal Validation Strategy
-To avoid seasonal data leakage present in standard random K-Fold splits, data was partitioned temporally:
-- **OOT Train Set:** January 1 to August 31, 2025 (38,477 loads)
-- **OOT Validation Set:** September 1 to October 31, 2025 (9,523 loads)
-
-### 3. Model Benchmark Results
-
-| Model Architecture | Validation Split | RMSE | MAE | MAPE (%) | $R^2$ Score |
-|---|---|---|---|---|---|
-| Naive Quote Signal Baseline | Jan - Oct 2025 | $673.18 | $143.40 | 11.37% | 0.7941 |
-| LightGBM Regressor | OOT (Sep-Oct) | $663.40 | $178.79 | 7.98% | 0.8110 |
-| CatBoost Regressor | OOT (Sep-Oct) | $687.16 | $146.35 | 6.65% | 0.7972 |
-| XGBoost Regressor | OOT (Sep-Oct) | $712.37 | $204.17 | 10.28% | 0.7821 |
-| **Weighted Tri-Model Ensemble** | **OOT (Sep-Oct)** | **$661.52** | **$148.18** | **6.58%** | **0.8121** |
-| Production Ensemble (100% Fit) | Full Train (Jan-Oct) | $432.62 | $87.62 | 4.49% | 0.9153 |
+Run Phase 1 ML assessment and December immutability scorer:
+```bash
+python main.py
+python score.py --predictions validation_predictions.csv --december-predictions data/december_chart_inputs.csv
+```
 
 ---
 
-## 📈 Outputs & Artifacts
+## 🔒 Security, Secret Management & Production Hardening
 
-- **`outputs/validation_predictions.csv`**: Final predictions for 12,000 loads.
-- **`outputs/december_predictions.csv`**: 31 daily predictions for Lexington to Fort Wayne (360 mi, Dry Van, 32,000 lb).
-- **`outputs/candidate_december.png`**: Fixed December forecast trend chart generated by `score.py`.
-- **`reports/freight_rate_report.pdf`**: Assessment report detailing data exploration, splitting methodology, model architecture, and trend visualizations.
+1. **Zero Secret Exposure:** Credentials are read strictly from environment variables (`.env`). `.env` and database files are excluded via `.gitignore`.
+2. **PostgreSQL Network Isolation:** In production (`docker-compose.prod.yml`), database ports are kept strictly within internal Docker networks.
+3. **CORS Governance:** Production environment restricts allowed origins (`CORS_ORIGINS`) to authorized domain names. Wildcard origins (`*`) are disabled in production.
+4. **Security Headers:** Nginx enforces HSTS, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, and Content-Security-Policy.
+5. **Non-Root Containers:** Backend and Frontend Docker containers execute under unprivileged dedicated system users (`appuser` and `nextjs`).
+
+---
+
+## 💾 Backup & Disaster Recovery Strategy
+
+1. **Database Backups:**
+   ```bash
+   docker exec -t freight_rate_db pg_dump -U postgres freight_db > backup_$(date +%Y%m%d_%H%M%S).sql
+   ```
+2. **Database Restoration:**
+   ```bash
+   cat backup_20261006.sql | docker exec -i freight_rate_db psql -U postgres -d freight_db
+   ```
+3. **Model Artifact Deployment & Rollback:**
+   Model artifacts are stored in `artifacts/`. Rollbacks can be executed seamlessly by updating `MODEL_ARTIFACT_PATH` in `.env` without mutating historical database records.

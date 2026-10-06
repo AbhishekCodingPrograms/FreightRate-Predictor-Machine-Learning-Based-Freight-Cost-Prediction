@@ -1,6 +1,7 @@
 import pytest
-import pandas as pd
+import pandas as pd  # type: ignore  # pyrefly: ignore
 import numpy as np
+
 
 from src import data_loader, preprocessing, features
 

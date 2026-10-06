@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  db:
+    ports: [] # Do NOT expose database port publicly in production
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+
+  backend:
+    restart: unless-stopped
+    ports: [] # Internal service routed via Nginx proxy
+    environment:
+      - API_ENV=production
+      - LOG_LEVEL=WARNING
+      - CORS_ORIGINS=["https://freight.example.com","http://localhost"]
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+
+  frontend:
+    restart: unless-stopped
+    ports: [] # Internal service routed via Nginx proxy
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+
+  proxy:
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped

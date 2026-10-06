@@ -1,0 +1,24 @@
+{
+    "python.defaultInterpreterPath": "C:\\Users\\abhis\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+    "python.pythonPath": "C:\\Users\\abhis\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+    "pyrefly.pythonPath": "C:\\Users\\abhis\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+    "pyrefly.searchPaths": [
+        "${workspaceFolder}",
+        "${workspaceFolder}/src",
+        "C:\\Users\\abhis\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages"
+    ],
+    "pyrefly.errors.missing-source-for-stubs": "ignore",
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}",
+        "${workspaceFolder}/src",
+        "C:\\Users\\abhis\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages"
+    ],
+    "python.autoComplete.extraPaths": [
+        "${workspaceFolder}",
+        "${workspaceFolder}/src",
+        "C:\\Users\\abhis\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages"
+    ],
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingModuleSource": "none"
+    }
+}

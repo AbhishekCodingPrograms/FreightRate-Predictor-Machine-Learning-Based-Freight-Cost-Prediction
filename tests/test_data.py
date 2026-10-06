@@ -2,8 +2,9 @@
 Unit tests for data loading and data integrity validation.
 """
 import pytest
-import pandas as pd
+import pandas as pd  # type: ignore  # pyrefly: ignore
 from pathlib import Path
+
 
 from src import config, data_loader
 

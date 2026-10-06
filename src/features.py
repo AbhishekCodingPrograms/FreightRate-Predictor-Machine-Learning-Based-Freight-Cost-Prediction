@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore  # pyrefly: ignore
 from typing import List
 
 FEATURE_COLUMNS = [
@@ -16,6 +16,7 @@ FEATURE_COLUMNS = [
     "base_signal",
     "market_signal",
     "weight_per_mile",
+    "quote_to_market_ratio",
     "month",
     "day",
     "dayofweek",
@@ -32,6 +33,7 @@ FEATURE_COLUMNS = [
 
 
 def extract_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Deterministically engineers feature variables for training and inference."""
     df = df.copy()
 
     # Calendar features
@@ -43,15 +45,17 @@ def extract_features(df: pd.DataFrame) -> pd.DataFrame:
     df["is_weekend"] = df["dayofweek"].isin([5, 6]).astype(int)
 
     # Cyclical date transformations
-    df["sin_month"] = np.sin(2 * np.pi * df["month"] / 12)
-    df["cos_month"] = np.cos(2 * np.pi * df["month"] / 12)
-    df["sin_dayofweek"] = np.sin(2 * np.pi * df["dayofweek"] / 7)
-    df["cos_dayofweek"] = np.cos(2 * np.pi * df["dayofweek"] / 7)
+    df["sin_month"] = np.sin(2 * np.pi * df["month"] / 12.0)
+    df["cos_month"] = np.cos(2 * np.pi * df["month"] / 12.0)
+    df["sin_dayofweek"] = np.sin(2 * np.pi * df["dayofweek"] / 7.0)
+    df["cos_dayofweek"] = np.cos(2 * np.pi * df["dayofweek"] / 7.0)
 
     # Base domain interaction signals
+    safe_dist = np.maximum(df["distance"].values, 0.1)
     df["base_signal"] = df["distance"] * df["quote_signal"]
     df["market_signal"] = df["distance"] * df["quote_signal"] * df["market_index_imputed"]
-    df["weight_per_mile"] = df["weight_imputed"] / (df["distance"] + 1e-5)
+    df["weight_per_mile"] = df["weight_imputed"] / (safe_dist + 1e-5)
+    df["quote_to_market_ratio"] = df["quote_signal"] / (df["market_index_imputed"] + 1e-5)
 
     # Equipment encoding
     df["is_reefer"] = (df["equipment"] == "Reefer").astype(int)

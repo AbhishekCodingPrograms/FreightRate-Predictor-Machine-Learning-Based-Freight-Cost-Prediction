@@ -1,6 +1,7 @@
-import pandas as pd
+import pandas as pd  # type: ignore  # pyrefly: ignore
 import numpy as np
 from typing import Dict, Any
+
 
 from src import validation, models, features
 

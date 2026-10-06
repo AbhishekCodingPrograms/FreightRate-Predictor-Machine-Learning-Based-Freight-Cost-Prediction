@@ -1,5 +1,6 @@
-import pandas as pd
+import pandas as pd  # type: ignore  # pyrefly: ignore
 from pathlib import Path
+
 from typing import Optional
 from src import config
 

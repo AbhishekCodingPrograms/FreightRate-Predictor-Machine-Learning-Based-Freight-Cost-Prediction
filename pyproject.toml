@@ -1,0 +1,31 @@
+[tool.pyrefly]
+python-version = "3.11"
+venv-path = ".venv"
+search-paths = [
+    ".",
+    "src",
+    ".venv/Lib/site-packages"
+]
+ignore-missing-imports = true
+
+[tool.pyrefly.errors]
+missing-source-for-stubs = "ignore"
+bad-return = "ignore"
+missing-imports = "ignore"
+
+[tool.pyright]
+pythonVersion = "3.11"
+pythonPlatform = "Windows"
+venvPath = "."
+venv = ".venv"
+extraPaths = [
+    ".",
+    "src",
+    ".venv/Lib/site-packages"
+]
+reportMissingModuleSource = "none"
+reportMissingImports = false
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true

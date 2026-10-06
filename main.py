@@ -1,5 +1,6 @@
 import sys
 import shutil
+import logging
 import subprocess
 from pathlib import Path
 
@@ -10,12 +11,18 @@ if str(BASE_DIR) not in sys.path:
 
 from src import config, train, predict, evaluate, data_loader, preprocessing, features
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logger = logging.getLogger(__name__)
+
 
 def run_scorer():
-    print("\nRunning score.py verification...")
+    logger.info("Running score.py verification...")
     score_script = BASE_DIR / "score.py"
-    val_preds = config.BASE_DIR / "validation_predictions.csv"
-    dec_preds = config.DATA_DIR / "december_chart_inputs.csv"
+    val_preds = config.VAL_PREDS_PATH
+    if not val_preds.exists():
+        val_preds = config.BASE_DIR / "validation_predictions.csv"
+    
+    dec_preds = config.DECEMBER_PREDS_PATH
 
     cmd = [
         sys.executable,
@@ -29,7 +36,7 @@ def run_scorer():
     res = subprocess.run(cmd, capture_output=True, text=True)
     print(res.stdout)
     if res.returncode != 0:
-        print("Scorer failed:", res.stderr)
+        logger.error(f"Scorer failed: {res.stderr}")
         raise RuntimeError("Scorer verification failed")
 
     # Copy generated chart to outputs directory
@@ -37,13 +44,13 @@ def run_scorer():
     if scorer_chart.exists():
         config.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         shutil.copy(scorer_chart, config.CANDIDATE_CHART_PATH)
-        print(f"Saved chart to {config.CANDIDATE_CHART_PATH}")
+        logger.info(f"Saved chart to {config.CANDIDATE_CHART_PATH}")
 
 
 def main():
-    print("Starting Freight Rate Predictor Pipeline\n")
+    logger.info("Starting End-to-End Freight Rate Predictor Pipeline\n")
 
-    # 1. Train Model
+    # 1. Train Model & Save Artifact
     final_ensemble, stats, oot_metrics = train.run_training_pipeline()
 
     # 2. Evaluate Full Dataset Performance
@@ -54,13 +61,13 @@ def main():
     eval_summary = evaluate.evaluate_model_performance(final_ensemble, df_feat)
     evaluate.print_evaluation_report(eval_summary)
 
-    # 3. Predict Validation & December Sets
-    val_df, dec_df = predict.run_prediction_pipeline(final_ensemble, stats)
+    # 3. Execute Inference Using Saved Artifact
+    val_df, dec_df = predict.run_prediction_pipeline()
 
     # 4. Run Scorer Verification
     run_scorer()
 
-    print("\nFreight Rate Prediction Pipeline Finished Successfully!")
+    logger.info("Freight Rate Prediction Pipeline Finished Successfully!")
 
 
 if __name__ == "__main__":

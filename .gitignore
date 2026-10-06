@@ -1,10 +1,27 @@
+# Environment & Secret files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production
+.env.production.local
+!.env.example
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
+
+# Next.js & Frontend builds
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+node_modules/
+
+# Local databases & temp SQLite files
+*.db
+*.sqlite3
 
 # Distribution / packaging
 .Python
@@ -28,15 +45,17 @@ wheels/
 venv/
 env/
 ENV/
-.venv
+.venv/
+
+# Testing & Coverage
+.pytest_cache/
+coverage/
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints
 
-# CatBoost info files
+# ML & Scorer artifacts/temp logs
 catboost_info/
-
-# Scorer results temporary folder
 scorer_results/
 
 # OS specific files
