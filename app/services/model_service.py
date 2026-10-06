@@ -79,6 +79,10 @@ class ModelService:
             "metrics": self.artifact.get("metrics", {}),
         }
 
+    @property
+    def metadata(self) -> Dict[str, Any]:
+        return self.get_model_info()
+
 
 # Global singleton instance of ModelService
 model_service = ModelService()
