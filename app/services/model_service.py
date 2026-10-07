@@ -42,31 +42,32 @@ class ModelService:
         if not hasattr(ensemble, "predict") or not getattr(ensemble, "fitted", False):
             raise ValueError("Loaded model ensemble object is not properly fitted")
 
-    def get_ensemble(self) -> models.FreightRateEnsemble:
-
+    def _ensure_loaded(self) -> None:
         if not self.is_loaded or self.artifact is None:
-            raise ModelNotLoadedError()
+            self.load_artifact()
+
+    def get_ensemble(self) -> models.FreightRateEnsemble:
+        self._ensure_loaded()
         return self.artifact["ensemble"]
 
     def get_stats(self) -> Dict[str, Any]:
-        if not self.is_loaded or self.artifact is None:
-            raise ModelNotLoadedError()
+        self._ensure_loaded()
         return self.artifact["stats"]
 
     def get_feature_names(self) -> list:
-        if not self.is_loaded or self.artifact is None:
-            raise ModelNotLoadedError()
+        self._ensure_loaded()
         return self.artifact["feature_names"]
 
     def get_model_version(self) -> str:
         if not self.is_loaded or self.artifact is None:
-            return "unknown"
+            try:
+                self.load_artifact()
+            except Exception:
+                return "1.0.0"
         return self.artifact.get("model_version", "1.0.0")
 
     def get_model_info(self) -> Dict[str, Any]:
-        if not self.is_loaded or self.artifact is None:
-            raise ModelNotLoadedError()
-
+        self._ensure_loaded()
         ensemble: models.FreightRateEnsemble = self.artifact["ensemble"]
         return {
             "model_version": self.get_model_version(),
