@@ -21,6 +21,10 @@ def get_health(
     model_svc: ModelService = Depends(get_model_service),
     db: Session = Depends(get_db_session)
 ) -> HealthResponse:
+    try:
+        model_svc._ensure_loaded()
+    except Exception:
+        pass
     db_ok = check_db_connected(db)
     return HealthResponse(
         status="healthy" if (model_svc.is_loaded and db_ok) else "degraded",
