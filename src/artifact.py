@@ -45,6 +45,18 @@ def save_model_artifact(
 
 def load_model_artifact(filepath: Optional[Path] = None) -> Dict[str, Any]:
     """Loads model artifact from disk without retraining."""
+    import sys
+    try:
+        import sklearn._loss
+        sys.modules.setdefault("sklearn.ensemble._hist_gradient_boosting._loss", sklearn._loss)
+    except Exception:
+        pass
+    try:
+        import sklearn.ensemble._hist_gradient_boosting._loss as _hgb_loss
+        sys.modules.setdefault("sklearn._loss", _hgb_loss)
+    except Exception:
+        pass
+
     load_path = filepath or ARTIFACT_DEFAULT_PATH
     if not load_path.exists():
         fallback = config.OUTPUT_DIR / "freight_rate_model.joblib"
