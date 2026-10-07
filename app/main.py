@@ -77,8 +77,9 @@ app.add_middleware(RequestTracingMiddleware)
 app.add_exception_handler(APIError, api_error_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 
-# Register Router
+# Register Router (both root and /api/v1 prefix for frontend compatibility)
 app.include_router(api_v1_router)
+app.include_router(api_v1_router, prefix="/api/v1")
 
 if __name__ == "__main__":
     import uvicorn
