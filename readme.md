@@ -6,13 +6,21 @@ Built with **Next.js 16 (App Router)**, **TypeScript**, **Tailwind CSS**, **Fast
 
 ---
 
-## 📌 Architecture & Modular Layout
+## Live Deployments
 
-```
+- **Frontend Application:** [https://freight-rate-predictor-machine-learning-based-freigh-4wexasm1i.vercel.app](https://freight-rate-predictor-machine-learning-based-freigh-4wexasm1i.vercel.app)
+- **Backend API Service:** [https://freightrate-predictor-backend.onrender.com](https://freightrate-predictor-backend.onrender.com)
+- **Interactive API Documentation:** [https://freightrate-predictor-backend.onrender.com/docs](https://freightrate-predictor-backend.onrender.com/docs)
+- **Health Check Endpoint:** [https://freightrate-predictor-backend.onrender.com/api/v1/health](https://freightrate-predictor-backend.onrender.com/api/v1/health)
+
+---
+
+## Architecture & Directory Layout
+
+```text
 freight-rate-predictor/
-│
-├── frontend/                       # Next.js App Router Frontend (Phase 4)
-│   ├── app/                        # App Router Pages (/, /predict, /batch, /history, /models)
+├── frontend/                       # Next.js App Router Frontend
+│   ├── app/                        # App Router Pages (/, /predict, /batch, /history, /models, /monitoring)
 │   ├── components/                 # UI, Layout, Form, Table, and Modal Components
 │   ├── lib/                        # Typed API Client, TypeScript Interfaces, Utilities
 │   ├── public/                     # Static Assets
@@ -20,7 +28,7 @@ freight-rate-predictor/
 │   ├── package.json                # Dependencies & Scripts
 │   └── tsconfig.json               # TypeScript Configuration
 │
-├── app/                            # FastAPI Application (Phase 2 & Phase 3)
+├── app/                            # FastAPI Application
 │   ├── main.py                     # FastAPI setup, middleware, CORS, lifespan, routes
 │   ├── config.py                   # Pydantic Settings & environment configuration
 │   ├── dependencies.py             # Dependency injection container
@@ -30,17 +38,17 @@ freight-rate-predictor/
 │   ├── services/                   # Model artifact lifecycle & prediction engine
 │   └── api/v1/                     # Health, Prediction, and Model endpoints
 │
-├── nginx/                          # Reverse Proxy (Phase 5)
+├── nginx/                          # Reverse Proxy Configuration
 │   └── nginx.conf                  # Nginx routing (/ -> Frontend, /api/ -> Backend, Security Headers)
 │
-├── docs/                           # Documentation & Checklists
+├── docs/                           # Documentation & Verification Guides
 │   └── PRODUCTION_CHECKLIST.md     # Production Gate & Infrastructure Verification Checklist
 │
 ├── migrations/                     # Alembic Database Schema Migrations
 │   ├── env.py                      # Migration environment configuration
 │   └── versions/                   # Versioned schema migration files
 │
-├── artifacts/                      # Serialized ML Artifacts (Phase 1)
+├── artifacts/                      # Serialized ML Artifacts
 │   ├── freight_rate_model.joblib   # Trained ensemble model & scaler pipeline
 │   └── model_metadata.json         # Feature definitions and validation metrics
 │
@@ -53,15 +61,14 @@ freight-rate-predictor/
 │   ├── benchmark_api.py            # API latency & throughput benchmark script
 │   └── smoke_test.py               # Automated end-to-end production smoke test
 │
-├── .github/workflows/              # CI/CD Workflows (Phase 5)
+├── .github/workflows/              # CI/CD Pipelines
 │   ├── ci.yml                      # Unified Pytest, Frontend Lint/Build & Docker CI
-│   └── deploy.yml                  # Zero-downtime deployment pipeline template
+│   └── deploy.yml                  # Deployment pipeline template
 │
-├── Dockerfile                      # Backend FastAPI Production Multi-stage Dockerfile
-├── docker-compose.yml              # Local Multi-Container Development Orchestrator
-├── docker-compose.prod.yml         # Production Container Overrides (Resource limits, network isolation)
-├── .env.example                    # Environment variable configuration template
-├── .gitignore                      # Security-audited git ignore rules
+├── Dockerfile                      # Backend FastAPI Multi-stage Dockerfile
+├── docker-compose.yml              # Multi-Container Orchestrator
+├── docker-compose.prod.yml         # Production Container Overrides
+├── .env.example                    # Environment variable template
 ├── score.py                        # ML December Immutability & Evaluation benchmark
 ├── main.py                         # ML pipeline assessment wrapper
 └── pyproject.toml / requirements.txt
@@ -69,9 +76,9 @@ freight-rate-predictor/
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
-```
+```text
                     INTERNET / CLIENT
                            │
                            ▼
@@ -91,57 +98,58 @@ Next.js App Router                  FastAPI REST API
 
 ---
 
-## 🗄️ Database Technology & Schema
+## Database Architecture & Schema
 
 ### Technology Stack
-- **Database Engine:** PostgreSQL 16 (or SQLite in-memory for testing)
-- **ORM & Repository Layer:** SQLAlchemy 2.x declarative models with clean repository pattern
+- **Database Engine:** PostgreSQL 16 (SQLite supported for testing)
+- **ORM & Repository Layer:** SQLAlchemy 2.x declarative models with repository pattern
 - **Database Migrations:** Alembic schema versioning
 
-### Schema Definition
+### Schema Overview
 1. **`model_versions`**: Persistent registry of deployed ML models and validation metrics.
 2. **`prediction_requests`**: Operational audit log for single and batch predictions.
 3. **`predictions`**: Individual load predictions, confidence intervals, and sanitized input payloads.
 
 ---
 
-## 🚀 Quick Start & Development
+## Quick Start & Local Development
 
 ### 1. Local Python & Next.js Development
-Backend:
+
+#### Backend Setup:
 ```bash
 # Install Python dependencies
 pip install -r requirements.txt
 
-# Run database migrations
+# Execute database migrations
 alembic upgrade head
 
-# Start FastAPI backend
+# Launch FastAPI backend server
 uvicorn app.main:app --reload --port 8000
 ```
 
-Frontend:
+#### Frontend Setup:
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-### 2. Docker Compose Multi-Container Orchestration
-Spin up the complete production architecture locally (PostgreSQL + FastAPI + Next.js + Nginx):
+### 2. Docker Compose Orchestration
+Spin up the complete multi-container architecture (PostgreSQL, FastAPI, Next.js, Nginx):
 ```bash
 docker compose up --build
 ```
-Access the application:
-- **Web Dashboard:** `http://localhost`
-- **API Documentation (Swagger):** `http://localhost/api/v1/docs` or `http://localhost:8000/docs`
-- **Health Check:** `http://localhost/health`
+Access endpoints:
+- Web Dashboard: `http://localhost`
+- API Documentation: `http://localhost/api/v1/docs` or `http://localhost:8000/docs`
+- Health Probe: `http://localhost/health`
 
 ---
 
-## 🧪 Testing & Quality Gate Commands
+## Testing & Quality Gate Commands
 
-Run complete backend pytest suite (41 tests):
+Run complete backend test suite (41 tests):
 ```bash
 pytest tests/
 ```
@@ -158,27 +166,27 @@ Run automated end-to-end production smoke test:
 python scripts/smoke_test.py
 ```
 
-Run Phase 1 ML assessment and December immutability scorer:
+Run ML assessment and evaluation benchmark:
 ```bash
 python main.py
-python score.py --predictions validation_predictions.csv --december-predictions data/december_chart_inputs.csv
+python score.py --predictions validation_predictions.csv --december-predictions data/december-chart-inputs.csv
 ```
 
 ---
 
-## 🔒 Security, Secret Management & Production Hardening
+## Security, Secret Management & Production Hardening
 
-1. **Zero Secret Exposure:** Credentials are read strictly from environment variables (`.env`). `.env` and database files are excluded via `.gitignore`.
-2. **PostgreSQL Network Isolation:** In production (`docker-compose.prod.yml`), database ports are kept strictly within internal Docker networks.
-3. **CORS Governance:** Production environment restricts allowed origins (`CORS_ORIGINS`) to authorized domain names. Wildcard origins (`*`) are disabled in production.
+1. **Zero Secret Exposure:** Credentials are read strictly from environment variables (`.env`). Secret files are excluded via `.gitignore`.
+2. **Network Isolation:** In production (`docker-compose.prod.yml`), database ports are restricted to internal Docker networks.
+3. **CORS Governance:** Production environment restricts allowed origins (`CORS_ORIGINS`) to authorized domains. Wildcards are disabled in production.
 4. **Security Headers:** Nginx enforces HSTS, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, and Content-Security-Policy.
 5. **Non-Root Containers:** Backend and Frontend Docker containers execute under unprivileged dedicated system users (`appuser` and `nextjs`).
 
 ---
 
-## 💾 Backup & Disaster Recovery Strategy
+## Backup & Disaster Recovery Strategy
 
-1. **Database Backups:**
+1. **Database Backup:**
    ```bash
    docker exec -t freight_rate_db pg_dump -U postgres freight_db > backup_$(date +%Y%m%d_%H%M%S).sql
    ```
@@ -187,4 +195,4 @@ python score.py --predictions validation_predictions.csv --december-predictions 
    cat backup_20261006.sql | docker exec -i freight_rate_db psql -U postgres -d freight_db
    ```
 3. **Model Artifact Deployment & Rollback:**
-   Model artifacts are stored in `artifacts/`. Rollbacks can be executed seamlessly by updating `MODEL_ARTIFACT_PATH` in `.env` without mutating historical database records.
+   Model artifacts are versioned in `artifacts/`. Rollbacks are executed by updating `MODEL_ARTIFACT_PATH` in `.env` without mutating database audit logs.
