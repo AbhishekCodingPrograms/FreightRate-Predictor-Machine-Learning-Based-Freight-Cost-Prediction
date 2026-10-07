@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd  # type: ignore  # pyrefly: ignore
-from typing import Dict, Tuple, Any, List
+from typing import Dict, Tuple, Any, List, Optional
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from scipy.optimize import minimize
 
@@ -90,23 +90,28 @@ def find_optimal_ensemble_weights(
     lgb_preds: np.ndarray,
     cat_preds: np.ndarray,
     xgb_preds: np.ndarray,
+    hgb_preds: Optional[np.ndarray] = None,
 ) -> Dict[str, float]:
     """Optimizes ensemble weights via constrained optimization on internal validation predictions."""
+    if hgb_preds is None:
+        hgb_preds = lgb_preds
+
     def loss_fn(weights):
-        w_lgb, w_cat, w_xgb = weights
-        combo = w_lgb * lgb_preds + w_cat * cat_preds + w_xgb * xgb_preds
+        w_hgb, w_lgb, w_cat, w_xgb = weights
+        combo = w_hgb * hgb_preds + w_lgb * lgb_preds + w_cat * cat_preds + w_xgb * xgb_preds
         return mean_squared_error(y_true, combo)
 
-    init_weights = [0.33, 0.33, 0.34]
-    bounds = [(0.0, 1.0), (0.0, 1.0), (0.0, 1.0)]
+    init_weights = [0.40, 0.30, 0.15, 0.15]
+    bounds = [(0.0, 1.0), (0.0, 1.0), (0.0, 1.0), (0.0, 1.0)]
     constraints = ({'type': 'eq', 'fun': lambda w: 1.0 - sum(w)})
 
     res = minimize(loss_fn, init_weights, method='SLSQP', bounds=bounds, constraints=constraints)
     if res.success:
         w = res.x
         return {
-            "lgbm": round(float(w[0]), 3),
-            "catboost": round(float(w[1]), 3),
-            "xgboost": round(float(w[2]), 3),
+            "hgb": round(float(w[0]), 3),
+            "lgbm": round(float(w[1]), 3),
+            "catboost": round(float(w[2]), 3),
+            "xgboost": round(float(w[3]), 3),
         }
-    return {"lgbm": 0.4, "catboost": 0.4, "xgboost": 0.2}
+    return {"hgb": 0.50, "lgbm": 0.25, "catboost": 0.15, "xgboost": 0.10}

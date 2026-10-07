@@ -48,20 +48,23 @@ def run_training_pipeline() -> Tuple[models.FreightRateEnsemble, Dict[str, Any],
     base_val = df_val_feat["base_signal"].values
 
     # Train sub-models
-    logger.info("Fitting LightGBM, CatBoost, and XGBoost on OOT training set...")
+    logger.info("Fitting HistGradientBoosting, LightGBM, CatBoost, and XGBoost on OOT training set...")
+    hgb_model = models.HistGradientBoostingRegressor(max_iter=300, learning_rate=0.05, max_depth=10, random_state=42).fit(X_train, y_train_res)
     lgb_model = models.LGBMRegressor(**config.LGBM_PARAMS).fit(X_train, y_train_res)
     cat_model = models.CatBoostRegressor(**config.CATBOOST_PARAMS).fit(X_train, y_train_res)
     xgb_model = models.XGBRegressor(**config.XGBOOST_PARAMS).fit(X_train, y_train_res)
 
+    hgb_preds = np.maximum(base_val + hgb_model.predict(X_val), 10.0)
     lgb_preds = np.maximum(base_val + lgb_model.predict(X_val), 10.0)
     cat_preds = np.maximum(base_val + cat_model.predict(X_val), 10.0)
     xgb_preds = np.maximum(base_val + xgb_model.predict(X_val), 10.0)
 
     # Calculate optimal ensemble weights using internal training CV folds
-    opt_weights = validation.find_optimal_ensemble_weights(y_val_true, lgb_preds, cat_preds, xgb_preds)
+    opt_weights = validation.find_optimal_ensemble_weights(y_val_true, lgb_preds, cat_preds, xgb_preds, hgb_preds=hgb_preds)
     logger.info(f"Selected Ensemble Weights: {opt_weights}")
 
     oot_ensemble = models.FreightRateEnsemble(weights=opt_weights)
+    oot_ensemble.hgb = hgb_model
     oot_ensemble.lgbm = lgb_model
     oot_ensemble.catboost = cat_model
     oot_ensemble.xgboost = xgb_model

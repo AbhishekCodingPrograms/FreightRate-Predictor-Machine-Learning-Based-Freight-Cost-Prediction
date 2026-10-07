@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 from lightgbm import LGBMRegressor
 from catboost import CatBoostRegressor
 from xgboost import XGBRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor
 
 from src import config
 
@@ -12,8 +13,9 @@ from src import config
 class FreightRateEnsemble:
     def __init__(self, weights: Optional[Dict[str, float]] = None):
 
-        self.weights = weights or {"lgbm": 0.4, "catboost": 0.4, "xgboost": 0.2}
+        self.weights = weights or {"hgb": 0.50, "lgbm": 0.25, "catboost": 0.15, "xgboost": 0.10}
 
+        self.hgb = HistGradientBoostingRegressor(max_iter=300, learning_rate=0.05, max_depth=10, random_state=42)
         self.lgbm = LGBMRegressor(**config.LGBM_PARAMS)
         self.catboost = CatBoostRegressor(**config.CATBOOST_PARAMS)
         self.xgboost = XGBRegressor(**config.XGBOOST_PARAMS)
@@ -21,6 +23,7 @@ class FreightRateEnsemble:
         self.fitted = False
 
     def fit(self, X: pd.DataFrame, y_residual: pd.Series):
+        self.hgb.fit(X, y_residual)
         self.lgbm.fit(X, y_residual)
         self.catboost.fit(X, y_residual)
         self.xgboost.fit(X, y_residual)
@@ -31,14 +34,21 @@ class FreightRateEnsemble:
         if not self.fitted:
             raise RuntimeError("Model ensemble must be fitted before predict()")
 
+        res_hgb = self.hgb.predict(X)
         res_lgb = self.lgbm.predict(X)
         res_cat = self.catboost.predict(X)
         res_xgb = self.xgboost.predict(X)
 
+        w_hgb = self.weights.get("hgb", 0.50)
+        w_lgb = self.weights.get("lgbm", 0.25)
+        w_cat = self.weights.get("catboost", 0.15)
+        w_xgb = self.weights.get("xgboost", 0.10)
+
         ensemble_res = (
-            self.weights["lgbm"] * res_lgb
-            + self.weights["catboost"] * res_cat
-            + self.weights["xgboost"] * res_xgb
+            w_hgb * res_hgb
+            + w_lgb * res_lgb
+            + w_cat * res_cat
+            + w_xgb * res_xgb
         )
 
         final_preds = base_signal.values + ensemble_res
