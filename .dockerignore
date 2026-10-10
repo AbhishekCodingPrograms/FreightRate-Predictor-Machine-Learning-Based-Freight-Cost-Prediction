@@ -23,7 +23,7 @@ scorer_results
 reports/*.png
 *.log
 
-# Exclude pre-trained model artifacts — Docker will retrain from scratch
-# inside the container to ensure sklearn version compatibility
+# Include production model artifact for instant Docker builds
 artifacts/*.joblib
+!artifacts/freight_rate_model.joblib
 outputs/*.joblib
