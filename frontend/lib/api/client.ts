@@ -17,7 +17,15 @@ export class APIClientError extends Error {
 }
 
 export async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+  const rawBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim().replace(/\/+$/, "");
+  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+
+  let url: string;
+  if (rawBase.endsWith("/api/v1") && cleanEndpoint.startsWith("/api/v1")) {
+    url = `${rawBase}${cleanEndpoint.substring(7)}`;
+  } else {
+    url = `${rawBase}${cleanEndpoint}`;
+  }
 
   const headers = new Headers(options.headers || {});
   if (!headers.has("Content-Type") && options.body && typeof options.body === "string") {
