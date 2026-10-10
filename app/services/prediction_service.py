@@ -87,8 +87,7 @@ class PredictionService:
                     )
                     response_data.id = db_record.id
                 except Exception as db_exc:
-                    logger.error(f"Database persistence failed for single prediction {req_id}: {db_exc}")
-                    raise PredictionError(f"Database persistence failed: {db_exc}")
+                    logger.warning(f"Database persistence failed for single prediction {req_id}: {db_exc}")
 
             return response_data
 
@@ -179,8 +178,7 @@ class PredictionService:
                     for i, record in enumerate(db_records):
                         responses[i].id = record.id
                 except Exception as db_exc:
-                    logger.error(f"Database persistence failed for batch prediction {req_id}: {db_exc}")
-                    raise PredictionError(f"Batch database persistence failed: {db_exc}")
+                    logger.warning(f"Database persistence failed for batch prediction {req_id}: {db_exc}")
 
             return BatchPredictionResponse(
                 count=len(responses),

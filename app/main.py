@@ -24,14 +24,12 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.critical(f"FATAL: Model artifact failed to load on startup: {exc}. Server will start in degraded state.")
 
-    # Non-destructive table check for SQLite/local dev/test fallback
-    current_url = get_db_url()
-    if current_url.startswith("sqlite"):
-        try:
-            Base.metadata.create_all(bind=engine)
-            logger.info("SQLite local tables verified/created non-destructively.")
-        except Exception as exc:
-            logger.warning(f"Could not verify SQLite tables: {exc}")
+    # Non-destructive table check for database schema
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables verified/created non-destructively.")
+    except Exception as exc:
+        logger.warning(f"Could not verify database tables: {exc}")
 
     if check_db_connected():
         logger.info("Database connection verified successfully.")
