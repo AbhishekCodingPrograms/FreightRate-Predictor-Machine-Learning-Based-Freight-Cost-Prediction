@@ -1,9 +1,12 @@
 # Dockerfile for FreightRate Predictor FastAPI Service
 FROM python:3.11-slim AS base
 
-# Prevent Python from writing .pyc files and enable unbuffered logging
+# Prevent Python from writing .pyc files, enable unbuffered logging, and set joblib thread limits for container runtimes
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV LOKY_MAX_CPU_COUNT=2
+ENV OMP_NUM_THREADS=2
+ENV MKL_NUM_THREADS=2
 
 WORKDIR /app
 

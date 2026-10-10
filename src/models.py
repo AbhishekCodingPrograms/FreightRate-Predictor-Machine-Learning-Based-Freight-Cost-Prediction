@@ -1,6 +1,9 @@
+import os
 import numpy as np
 import pandas as pd  # type: ignore  # pyrefly: ignore
 from typing import Dict, List, Optional
+
+os.environ.setdefault("LOKY_MAX_CPU_COUNT", "2")
 
 from lightgbm import LGBMRegressor
 from catboost import CatBoostRegressor

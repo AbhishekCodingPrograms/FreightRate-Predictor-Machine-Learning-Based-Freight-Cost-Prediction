@@ -1,7 +1,10 @@
+import os
 import logging
 import numpy as np
 import pandas as pd  # type: ignore  # pyrefly: ignore
 from typing import Tuple, Dict, Any
+
+os.environ.setdefault("LOKY_MAX_CPU_COUNT", "2")
 
 
 from src import config, data_loader, data_validation, preprocessing, features, validation, models, artifact, target_strategy
