@@ -9,7 +9,9 @@ from app.core.exceptions import APIError, api_error_handler, generic_exception_h
 from app.services.model_service import model_service
 from app.db.database import engine, Base, check_db_connected, get_db_url
 from app.db import models  # Ensures ORM models register on Base.metadata
-from app.api.v1.router import api_v1_router
+from app.api.v1.router import api_v1_router, root_api_router
+
+
 
 
 @asynccontextmanager
@@ -77,8 +79,9 @@ app.add_middleware(RequestTracingMiddleware)
 app.add_exception_handler(APIError, api_error_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 
-# Register API v1 Router
+# Register Routers (both /api/v1 prefix and root level for maximum frontend/backend compatibility)
 app.include_router(api_v1_router)
+app.include_router(root_api_router)
 
 # Top-level /health and /ready endpoints for infrastructure probes
 from app.api.v1.routes.health import get_health, get_ready
