@@ -44,7 +44,18 @@
 
 ## 8. CI/CD & Automated Verification
 - [x] GitHub Actions CI workflow created (`.github/workflows/ci.yml`).
-- [x] Pytest backend test suite (41 tests) passing 100%.
+- [x] Pytest backend test suite (48 tests) passing.
 - [x] Next.js linting and build checks integrated into CI.
 - [x] Docker build validation step included in CI.
 - [x] Automated smoke test script (`scripts/smoke_test.py`) created and verified.
+- [ ] Add the Render service deploy hook as the `RENDER_DEPLOY_HOOK_URL` GitHub Actions repository secret.
+- [ ] Disable Render's built-in auto-deploy so only successful CI runs deploy the backend.
+- [ ] After CI passes on `main`, `.github/workflows/deploy.yml` triggers a backend deployment on Render.
+- [ ] Keep frontend GitHub auto-deploy enabled in the Vercel project integration.
+
+To configure backend deployment, create a deploy hook in the Render service settings, then
+save its URL in GitHub under **Settings > Secrets and variables > Actions** as
+`RENDER_DEPLOY_HOOK_URL`. Do not commit or share the hook URL. Disable Render's built-in
+auto-deploy to prevent a second deployment before CI completes. The deployment workflow
+only triggers Render after the full CI workflow succeeds on `main`; manual dispatch is
+also limited to `main`.

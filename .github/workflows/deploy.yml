@@ -1,31 +1,54 @@
-name: Production Deployment & Migration Pipeline
+name: Deploy to Render
 
 on:
+  workflow_run:
+    workflows: ["Freight Rate Predictor CI Pipeline"]
+    types: [completed]
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Target Deployment Environment'
-        required: true
-        default: 'production'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: render-production-deploy
+  cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy to Server & Run Migrations
+    name: Deploy backend to Render
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: >-
+      ${{
+        (
+          github.event_name == 'workflow_dispatch' &&
+          github.ref == 'refs/heads/main'
+        ) ||
+        (
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.head_branch == 'main'
+        )
+      }}
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Verify Environment Secrets Configuration
+      - name: Verify Render deploy hook is configured
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
-          echo "Verifying deployment configuration..."
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "::error::Add the Render deploy hook URL as the RENDER_DEPLOY_HOOK_URL repository secret."
+            exit 1
+          fi
+          case "$RENDER_DEPLOY_HOOK_URL" in
+            https://api.render.com/deploy/*) ;;
+            *)
+              echo "::error::RENDER_DEPLOY_HOOK_URL must be a Render deploy hook URL."
+              exit 1
+              ;;
+          esac
 
-      - name: Deploy Containers & Run Alembic Migrations
+      - name: Trigger Render deployment
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
-          echo "Executing zero-downtime deployment sequence:"
-          echo "1. Pull/Build fresh Docker images"
-          echo "2. Run 'alembic upgrade head' against PostgreSQL"
-          echo "3. Restart backend and frontend service containers"
-          echo "4. Execute health checks on /health and /ready endpoints"
+          curl --fail-with-body --silent --show-error \
+            --request POST "$RENDER_DEPLOY_HOOK_URL"

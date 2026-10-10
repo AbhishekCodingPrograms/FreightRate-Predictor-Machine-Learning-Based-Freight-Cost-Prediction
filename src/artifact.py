@@ -10,6 +10,32 @@ ARTIFACT_DIR = config.BASE_DIR / "artifacts"
 ARTIFACT_DEFAULT_PATH = ARTIFACT_DIR / "freight_rate_model.joblib"
 
 
+def register_sklearn_loss_aliases() -> None:
+    """Registers sys.modules aliases for scikit-learn _loss module across versions to handle pickle compatibility."""
+    import sys
+    try:
+        import sklearn._loss
+        sys.modules.setdefault("_loss", sklearn._loss)
+        sys.modules.setdefault("sklearn._loss", sklearn._loss)
+        sys.modules.setdefault("sklearn.ensemble._hist_gradient_boosting._loss", sklearn._loss)
+        if hasattr(sklearn._loss, "_loss"):
+            sys.modules.setdefault("sklearn._loss._loss", sklearn._loss._loss)
+    except Exception:
+        pass
+
+    try:
+        import sklearn.ensemble._hist_gradient_boosting._loss as _hgb_loss
+        sys.modules.setdefault("_loss", _hgb_loss)
+        sys.modules.setdefault("sklearn._loss", _hgb_loss)
+        sys.modules.setdefault("sklearn.ensemble._hist_gradient_boosting._loss", _hgb_loss)
+    except Exception:
+        pass
+
+
+# Register aliases immediately on module import
+register_sklearn_loss_aliases()
+
+
 def save_model_artifact(
     ensemble: models.FreightRateEnsemble,
     stats: Dict[str, Any],
@@ -45,32 +71,40 @@ def save_model_artifact(
 
 def load_model_artifact(filepath: Optional[Path] = None) -> Dict[str, Any]:
     """Loads model artifact from disk without retraining."""
-    import sys
-    try:
-        import sklearn._loss
-        sys.modules.setdefault("sklearn.ensemble._hist_gradient_boosting._loss", sklearn._loss)
-    except Exception:
-        pass
-    try:
-        import sklearn.ensemble._hist_gradient_boosting._loss as _hgb_loss
-        sys.modules.setdefault("sklearn._loss", _hgb_loss)
-    except Exception:
-        pass
+    register_sklearn_loss_aliases()
 
-    load_path = filepath or ARTIFACT_DEFAULT_PATH
-    if not load_path.exists():
-        fallback = config.OUTPUT_DIR / "freight_rate_model.joblib"
-        if fallback.exists():
-            load_path = fallback
-        else:
-            models_fallback = config.BASE_DIR / "models" / "freight_rate_model.joblib"
-            if models_fallback.exists():
-                load_path = models_fallback
-            else:
-                raise FileNotFoundError(
-                    f"Model artifact not found at {load_path}. "
-                    "Please train the model first by running: python -m src.train"
-                )
+    candidate_paths: List[Path] = []
+    if filepath:
+        candidate_paths.append(Path(filepath))
+    candidate_paths.extend([
+        ARTIFACT_DEFAULT_PATH,
+        config.OUTPUT_DIR / "freight_rate_model.joblib",
+        config.BASE_DIR / "models" / "freight_rate_model.joblib",
+    ])
 
-    artifact = joblib.load(load_path)
-    return artifact
+    # Deduplicate preserving order
+    unique_paths: List[Path] = []
+    for p in candidate_paths:
+        if p not in unique_paths:
+            unique_paths.append(p)
+
+    last_error: Optional[Exception] = None
+    for path in unique_paths:
+        if path.exists():
+            try:
+                artifact = joblib.load(path)
+                return artifact
+            except Exception as exc:
+                last_error = exc
+                continue
+
+    if last_error:
+        raise RuntimeError(
+            f"Failed to load model artifact from any candidate path: {last_error}"
+        ) from last_error
+    else:
+        raise FileNotFoundError(
+            f"Model artifact not found at {[str(p) for p in unique_paths]}. "
+            "Please train the model first by running: python -m src.train"
+        )
+

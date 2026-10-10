@@ -26,8 +26,12 @@ def promote_candidate_model(
 
     # Verification: artifact can be loaded
     try:
+        from src.artifact import register_sklearn_loss_aliases
+        register_sklearn_loss_aliases()
         art = joblib.load(candidate.artifact_path)
-        if "preprocessing" not in art or "models" not in art:
+        has_ensemble = "ensemble" in art or "models" in art
+        has_stats = "stats" in art or "preprocessing" in art
+        if not (has_ensemble and has_stats):
             return False, f"Invalid model artifact structure for '{version}'.", {}
     except Exception as e:
         return False, f"Failed to load artifact for '{version}': {e}", {}

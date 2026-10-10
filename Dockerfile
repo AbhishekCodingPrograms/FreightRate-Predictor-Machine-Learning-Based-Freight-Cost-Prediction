@@ -27,9 +27,8 @@ RUN adduser --disabled-password --gecos "" appuser && \
 # Copy application source code (excluding any pre-built Windows artifacts)
 COPY --chown=appuser:appuser . .
 
-# Retrain the model inside Docker using the container's own sklearn version.
-# This prevents the "No module named '_loss'" joblib/sklearn version mismatch
-# that occurs when a model artifact is serialized on a different sklearn version.
+# scikit-learn is pinned in requirements.txt to match the model serialization
+# version; retraining here also ensures the artifact is built for this runtime.
 RUN python -m src.train
 
 USER appuser

@@ -23,6 +23,8 @@ def rollback_production_model(
 
     # Verify target artifact loadability
     try:
+        from src.artifact import register_sklearn_loss_aliases
+        register_sklearn_loss_aliases()
         joblib.load(target_model.artifact_path)
     except Exception as e:
         return False, f"Corrupted rollback artifact: {e}", {}

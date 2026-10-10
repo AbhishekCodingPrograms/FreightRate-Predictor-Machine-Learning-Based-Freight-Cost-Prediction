@@ -17,6 +17,11 @@ router = APIRouter(tags=["Health & Readiness"])
     summary="Service Health Check",
     description="Lightweight check returning service status, model loaded flag, and database connection status."
 )
+@router.get(
+    "/api/v1/health",
+    response_model=HealthResponse,
+    include_in_schema=False
+)
 def get_health(
     model_svc: ModelService = Depends(get_model_service),
     db: Session = Depends(get_db_session)
@@ -39,6 +44,10 @@ def get_health(
     "/ready",
     summary="Readiness Probe",
     description="Readiness probe ensuring trained model artifact and database connection are active."
+)
+@router.get(
+    "/api/v1/ready",
+    include_in_schema=False
 )
 def get_ready(
     model_svc: ModelService = Depends(get_model_service),

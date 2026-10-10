@@ -15,7 +15,13 @@ from app.services.prediction_service import PredictionService
 from app.dependencies import get_prediction_service, get_db_session
 from app.db.repositories import PredictionRepository
 
-router = APIRouter(prefix="/api/v1", tags=["Predictions"])
+import numpy as np
+import pandas as pd
+from app.services.model_service import ModelService
+from app.dependencies import get_model_service
+from src import data_loader, preprocessing, features
+
+router = APIRouter(tags=["Predictions"])
 
 
 @router.post(
@@ -54,6 +60,11 @@ def predict_batch(
     status_code=status.HTTP_200_OK,
     summary="Query Prediction History",
     description="Retrieves persistent prediction history filtered by load_id, model_version, and date range with bounded pagination."
+)
+@router.get(
+    "/history",
+    response_model=PredictionListResponse,
+    include_in_schema=False
 )
 def list_predictions(
     load_id: Optional[str] = Query(None, description="Filter by unique load transaction ID"),
@@ -157,3 +168,62 @@ def get_prediction_by_id(
         prediction_timestamp=rec.prediction_timestamp.isoformat() if rec.prediction_timestamp else "",
         input_data=rec.input_data,
     )
+
+
+@router.get(
+    "/december-forecast",
+    summary="Get December 31-Day Assessment Forecast",
+    description="Generates daily spot rate predictions for the 31 December assessment load schedule."
+)
+def get_december_forecast(
+    model_svc: ModelService = Depends(get_model_service)
+):
+    model_svc._ensure_loaded()
+    ensemble = model_svc.get_ensemble()
+    stats = model_svc.get_stats()
+    feature_cols = model_svc.get_feature_names()
+
+    dec_raw = data_loader.load_december_data()
+    train_raw = data_loader.load_train_data()
+    lex_sample = train_raw[train_raw["pickup"] == "Lexington"].iloc[0]
+    ftw_sample = train_raw[train_raw["delivery"] == "Fort Wayne"].iloc[0]
+    lex_quote = float(train_raw[train_raw["pickup"] == "Lexington"]["quote_signal"].mean())
+
+    dec_prep_df = dec_raw.copy()
+    dec_prep_df["pickup_lat"] = lex_sample["pickup_lat"]
+    dec_prep_df["pickup_lon"] = lex_sample["pickup_lon"]
+    dec_prep_df["delivery_lat"] = ftw_sample["delivery_lat"]
+    dec_prep_df["delivery_lon"] = ftw_sample["delivery_lon"]
+    dec_prep_df["market_index"] = stats["market_index_median"]
+    dec_prep_df["quote_signal"] = lex_quote
+
+    dec_prep, _ = preprocessing.preprocess_data(dec_prep_df, stats=stats)
+    dec_feat = features.extract_features(dec_prep)
+
+    preds = ensemble.predict(dec_feat[feature_cols], dec_feat["base_signal"])
+
+    result = []
+    for i in range(len(dec_raw)):
+        d = dec_raw.iloc[i]
+        rate = round(float(preds[i]), 2)
+        result.append({
+            "date": pd.to_datetime(d["date"]).strftime("%Y-%m-%d"),
+            "pickup": d["pickup"],
+            "delivery": d["delivery"],
+            "distance": float(d["distance"]),
+            "equipment": d["equipment"],
+            "weight": float(d["weight"]),
+            "predicted_rate": rate,
+            "rate_per_mile": round(rate / max(float(d["distance"]), 0.1), 2),
+        })
+
+    rates = [r["predicted_rate"] for r in result]
+    summary = {
+        "min_rate": min(rates) if rates else 0.0,
+        "max_rate": max(rates) if rates else 0.0,
+        "avg_rate": round(float(np.mean(rates)), 2) if rates else 0.0,
+        "total_days": len(rates),
+    }
+
+    return {"forecast": result, "summary": summary}
+

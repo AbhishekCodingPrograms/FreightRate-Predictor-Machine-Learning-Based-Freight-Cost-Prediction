@@ -77,9 +77,13 @@ app.add_middleware(RequestTracingMiddleware)
 app.add_exception_handler(APIError, api_error_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 
-# Register Router (both root and /api/v1 prefix for frontend compatibility)
+# Register API v1 Router
 app.include_router(api_v1_router)
-app.include_router(api_v1_router, prefix="/api/v1")
+
+# Top-level /health and /ready endpoints for infrastructure probes
+from app.api.v1.routes.health import get_health, get_ready
+app.get("/health", tags=["Health & Readiness"], summary="Root Health Check", include_in_schema=True)(get_health)
+app.get("/ready", tags=["Health & Readiness"], summary="Root Readiness Probe", include_in_schema=True)(get_ready)
 
 if __name__ == "__main__":
     import uvicorn

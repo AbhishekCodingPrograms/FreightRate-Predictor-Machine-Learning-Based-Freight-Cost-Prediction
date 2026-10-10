@@ -3,7 +3,7 @@ from typing import Dict, Any, Optional
 from app.config import settings
 from app.core.logging import logger
 from app.core.exceptions import ModelNotLoadedError
-from src import artifact, models
+from src import artifact, features, models
 
 
 class ModelService:
@@ -41,6 +41,20 @@ class ModelService:
         ensemble = art["ensemble"]
         if not hasattr(ensemble, "predict") or not getattr(ensemble, "fitted", False):
             raise ValueError("Loaded model ensemble object is not properly fitted")
+
+        required_estimators = ("lgbm", "et", "catboost", "xgboost")
+        missing_estimators = [name for name in required_estimators if not hasattr(ensemble, name)]
+        if missing_estimators:
+            raise ValueError(
+                f"Model artifact is incompatible with the current ensemble; "
+                f"missing estimators: {missing_estimators}. Retrain the model."
+            )
+
+        if art["feature_names"] != features.get_feature_names():
+            raise ValueError(
+                "Model artifact feature schema does not match the current application. "
+                "Retrain the model."
+            )
 
     def _ensure_loaded(self) -> None:
         if not self.is_loaded or self.artifact is None:

@@ -27,13 +27,13 @@ jobs:
           pip install -r requirements.txt
           pip install httpx pytest-cov
 
-      - name: Run Pytest Test Suite
-        run: |
-          pytest --verbose --cov=src
-
       - name: Execute ML Model Assessment Pipeline
         run: |
           python main.py
+
+      - name: Run Pytest Test Suite
+        run: |
+          pytest --verbose --cov=src
 
       - name: Verify Scorer Output Benchmark
         run: |

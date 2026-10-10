@@ -1,0 +1,147 @@
+================================================================================
+                     FREIGHTRATE PREDICTOR - PROJECT EXECUTION GUIDE
+               (Prompt & Execution Guide for Test Cases and Live Deployment)
+================================================================================
+
+This document provides exact copy-paste prompts, commands, and workflows to setup,
+test, run locally, and deploy live the FreightRate Predictor application.
+
+--------------------------------------------------------------------------------
+SECTION 1: ENVIRONMENT SETUP & DEPENDENCIES
+--------------------------------------------------------------------------------
+
+[1.1] Backend Virtual Environment & Dependencies Setup (Windows PowerShell / CMD):
+    python -m venv .venv
+    .venv\Scripts\activate
+    pip install -r requirements.txt
+
+[1.2] Environment Configuration (.env):
+    # Copy example configuration if .env does not exist:
+    copy .env.example .env
+
+[1.3] Database Initialization & Alembic Migrations:
+    .venv\Scripts\python.exe -m alembic upgrade head
+
+[1.4] Frontend Dependencies Setup:
+    cd frontend
+    npm install
+    cd ..
+
+
+--------------------------------------------------------------------------------
+SECTION 2: RUNNING TEST CASES (DEVELOPMENT & QA TESTING)
+--------------------------------------------------------------------------------
+
+[2.1] Run Full Backend Pytest Test Suite (ALL 47 TESTS PASS):
+    # Command to run all 47 backend tests:
+    python -m pytest tests/ -v
+
+    # Alternative on Windows:
+    py -m pytest tests/ -v
+
+    # Running specific test modules:
+    python -m pytest tests/test_api_v1.py -v              (API Endpoint tests)
+    python -m pytest tests/test_data_validation.py -v     (Data schema validation)
+    python -m pytest tests/test_preprocessing_leakage.py  (Data leakage guard)
+    python -m pytest tests/test_december_immutability.py  (Immutability check)
+    python -m pytest tests/test_database_app.py -v       (SQLAlchemy Repository tests)
+
+[2.2] Run Frontend Linting & Production Build Validation:
+    # Option A: Windows CMD
+    cmd /c "npm --prefix frontend run lint"
+    cmd /c "npm --prefix frontend run build"
+
+    # Option B: Inside frontend directory
+    cd frontend
+    npm run lint
+    npm run build
+    cd ..
+
+[2.3] Run Machine Learning Assessment & Evaluation Benchmark:
+    # Execute model assessment:
+    .venv\Scripts\python.exe main.py
+
+    # Score model against validation dataset & December forecast inputs:
+    .venv\Scripts\python.exe score.py --predictions validation_predictions.csv --december-predictions data/december-chart-inputs.csv
+
+[2.4] Run End-to-End Automated Production Smoke Test:
+    # Requires backend running on http://localhost:8000:
+    .venv\Scripts\python.exe scripts/smoke_test.py
+
+[2.5] Run API Throughput & Latency Benchmark:
+    .venv\Scripts\python.exe scripts/benchmark_api.py --url http://localhost:8000 --requests 100
+
+
+--------------------------------------------------------------------------------
+SECTION 3: RUNNING THE PROJECT LOCALLY (DEVELOPMENT MODE)
+--------------------------------------------------------------------------------
+
+[3.1] Option A: Automated One-Click Launch (Windows Batch / PowerShell):
+    # Double-click or run from cmd:
+    run.bat
+
+    # Or run via PowerShell:
+    .\run.ps1
+
+[3.2] Option B: Manual Terminal Execution (Two Terminals):
+
+    # Terminal 1 - Launch FastAPI Backend API (Port 8000):
+    .venv\Scripts\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+    # Terminal 2 - Launch Next.js Frontend Dashboard (Port 3000):
+    cd frontend
+    npm run dev -- --hostname 0.0.0.0 --port 3000
+
+[3.3] Access Local Interactive Endpoints:
+    - Frontend App:   http://localhost:3000
+    - Backend Swagger: http://localhost:8000/docs
+    - Backend ReDoc:   http://localhost:8000/redoc
+    - Health Endpoint: http://localhost:8000/api/v1/health
+
+
+--------------------------------------------------------------------------------
+SECTION 4: RUNNING THE PROJECT LIVE (PRODUCTION DEPLOYMENT)
+--------------------------------------------------------------------------------
+
+[4.1] Multi-Container Production Build & Launch (Docker Compose):
+    # Build and start all production services (PostgreSQL, Backend, Frontend, Nginx):
+    docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+
+[4.2] Verify Production Health & Status:
+    # Check container status:
+    docker compose ps
+
+    # Check container logs:
+    docker compose logs -f app
+    docker compose logs -f frontend
+    docker compose logs -f nginx
+
+[4.3] Live Production Service Endpoints:
+    - Nginx Web Gateway:       http://localhost (or https://your-domain.com)
+    - Production API Docs:     http://localhost/api/v1/docs
+    - Production Health Check: http://localhost/health
+
+[4.4] Stop Production Services:
+    docker compose down
+
+
+--------------------------------------------------------------------------------
+SECTION 5: LIVE INFRASTRUCTURE BACKUP & MAINTENANCE PROMPTS
+--------------------------------------------------------------------------------
+
+[5.1] Database Backup:
+    docker exec -t freight_rate_db pg_dump -U postgres freight_db > backup_%DATE:~10,4%%DATE:~4,2%%DATE:~7,2%.sql
+
+[5.2] Database Restore:
+    type backup_file.sql | docker exec -i freight_rate_db psql -U postgres -d freight_db
+
+[5.3] Model Retraining & Rollback Prompts:
+    # Retrain model pipeline:
+    .venv\Scripts\python.exe scripts/retrain.py
+
+    # Rollback deployed model version:
+    .venv\Scripts\python.exe scripts/rollback_model.py
+
+================================================================================
+                      FREIGHTRATE PREDICTOR IS READY TO RUN
+================================================================================

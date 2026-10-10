@@ -5,11 +5,11 @@ from app.services.model_service import ModelService
 from app.dependencies import get_model_service, get_db_session
 from app.db.repositories import ModelVersionRepository
 
-router = APIRouter(prefix="/api/v1", tags=["Model Information"])
+router = APIRouter(prefix="/model", tags=["Model Information"])
 
 
 @router.get(
-    "/model/info",
+    "/info",
     response_model=ModelInfoResponse,
     status_code=status.HTTP_200_OK,
     summary="Get Model Metadata & Metrics",
@@ -29,3 +29,25 @@ def get_model_info(
 
     info["database_metadata"] = db_mv.to_dict() if db_mv else None
     return ModelInfoResponse(**info)
+
+
+@router.get(
+    "/metrics",
+    status_code=status.HTTP_200_OK,
+    summary="Get Feature Importances & Model Metrics",
+    description="Returns calculated feature importances, ensemble weights, and validation benchmark metrics."
+)
+def get_model_metrics(
+    model_svc: ModelService = Depends(get_model_service),
+):
+    model_svc._ensure_loaded()
+    ensemble = model_svc.get_ensemble()
+    feature_names = model_svc.get_feature_names()
+    importances = ensemble.get_feature_importances(feature_names).to_dict(orient="records")
+
+    return {
+        "metrics": model_svc.artifact.get("metrics", {}) if model_svc.artifact else {},
+        "ensemble_weights": ensemble.weights,
+        "feature_importances": importances,
+    }
+

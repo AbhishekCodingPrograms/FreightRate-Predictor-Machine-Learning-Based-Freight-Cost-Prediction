@@ -63,7 +63,7 @@ freight-rate-predictor/
 │
 ├── .github/workflows/              # CI/CD Pipelines
 │   ├── ci.yml                      # Unified Pytest, Frontend Lint/Build & Docker CI
-│   └── deploy.yml                  # Deployment pipeline template
+│   └── deploy.yml                  # CI-gated Render backend deployment
 │
 ├── Dockerfile                      # Backend FastAPI Multi-stage Dockerfile
 ├── docker-compose.yml              # Multi-Container Orchestrator
