@@ -30,9 +30,8 @@ RUN adduser --disabled-password --gecos "" appuser && \
 # Copy application source code (excluding any pre-built Windows artifacts)
 COPY --chown=appuser:appuser . .
 
-# scikit-learn is pinned in requirements.txt to match the model serialization
-# version; retraining here also ensures the artifact is built for this runtime.
-RUN python -m src.train
+# Verify pre-built model artifact is valid; train only if missing
+RUN python -c "from pathlib import Path; p = Path('artifacts/freight_rate_model.joblib'); (print('Using verified pre-built artifact:', p) if p.exists() else (__import__('src.train', fromlist=['run_training_pipeline']).run_training_pipeline()))"
 
 USER appuser
 

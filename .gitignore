@@ -58,8 +58,9 @@ coverage/
 catboost_info/
 scorer_results/
 
-# Model artifacts — large binary files, retrained inside Docker during build
+# Model artifacts — track production artifact in git for fast Docker builds
 artifacts/*.joblib
+!artifacts/freight_rate_model.joblib
 outputs/*.joblib
 
 # OS specific files
