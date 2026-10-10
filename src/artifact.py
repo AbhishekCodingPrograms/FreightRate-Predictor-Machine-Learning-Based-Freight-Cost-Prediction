@@ -33,12 +33,12 @@ def save_model_artifact(
         "metrics": metrics or {},
     }
 
-    joblib.dump(artifact, save_path)
+    joblib.dump(artifact, save_path, compress=3)
     
     # Also save a copy to outputs dir for convenience
     alt_copy = config.OUTPUT_DIR / "freight_rate_model.joblib"
     alt_copy.parent.mkdir(parents=True, exist_ok=True)
-    joblib.dump(artifact, alt_copy)
+    joblib.dump(artifact, alt_copy, compress=3)
 
     return save_path
 

@@ -58,6 +58,10 @@ coverage/
 catboost_info/
 scorer_results/
 
+# Model artifacts — large binary files, retrained inside Docker during build
+artifacts/*.joblib
+outputs/*.joblib
+
 # OS specific files
 .DS_Store
 Thumbs.db

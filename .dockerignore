@@ -22,3 +22,8 @@ catboost_info
 scorer_results
 reports/*.png
 *.log
+
+# Exclude pre-trained model artifacts — Docker will retrain from scratch
+# inside the container to ensure sklearn version compatibility
+artifacts/*.joblib
+outputs/*.joblib

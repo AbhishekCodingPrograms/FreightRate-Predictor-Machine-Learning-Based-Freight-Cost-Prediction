@@ -90,18 +90,18 @@ def find_optimal_ensemble_weights(
     lgb_preds: np.ndarray,
     cat_preds: np.ndarray,
     xgb_preds: np.ndarray,
-    hgb_preds: Optional[np.ndarray] = None,
+    et_preds: Optional[np.ndarray] = None,
 ) -> Dict[str, float]:
     """Optimizes ensemble weights via constrained optimization on internal validation predictions."""
-    if hgb_preds is None:
-        hgb_preds = lgb_preds
+    if et_preds is None:
+        et_preds = lgb_preds
 
     def loss_fn(weights):
-        w_hgb, w_lgb, w_cat, w_xgb = weights
-        combo = w_hgb * hgb_preds + w_lgb * lgb_preds + w_cat * cat_preds + w_xgb * xgb_preds
+        w_lgb, w_et, w_cat, w_xgb = weights
+        combo = w_lgb * lgb_preds + w_et * et_preds + w_cat * cat_preds + w_xgb * xgb_preds
         return mean_squared_error(y_true, combo)
 
-    init_weights = [0.40, 0.30, 0.15, 0.15]
+    init_weights = [0.45, 0.30, 0.15, 0.10]
     bounds = [(0.0, 1.0), (0.0, 1.0), (0.0, 1.0), (0.0, 1.0)]
     constraints = ({'type': 'eq', 'fun': lambda w: 1.0 - sum(w)})
 
@@ -109,9 +109,9 @@ def find_optimal_ensemble_weights(
     if res.success:
         w = res.x
         return {
-            "hgb": round(float(w[0]), 3),
-            "lgbm": round(float(w[1]), 3),
+            "lgbm": round(float(w[0]), 3),
+            "et": round(float(w[1]), 3),
             "catboost": round(float(w[2]), 3),
             "xgboost": round(float(w[3]), 3),
         }
-    return {"hgb": 0.50, "lgbm": 0.25, "catboost": 0.15, "xgboost": 0.10}
+    return {"lgbm": 0.45, "et": 0.30, "catboost": 0.15, "xgboost": 0.10}

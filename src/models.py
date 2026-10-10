@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 from lightgbm import LGBMRegressor
 from catboost import CatBoostRegressor
 from xgboost import XGBRegressor
-from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.ensemble import ExtraTreesRegressor
 
 from src import config
 
@@ -13,18 +13,18 @@ from src import config
 class FreightRateEnsemble:
     def __init__(self, weights: Optional[Dict[str, float]] = None):
 
-        self.weights = weights or {"hgb": 0.50, "lgbm": 0.25, "catboost": 0.15, "xgboost": 0.10}
+        self.weights = weights or {"lgbm": 0.45, "et": 0.30, "catboost": 0.15, "xgboost": 0.10}
 
-        self.hgb = HistGradientBoostingRegressor(max_iter=300, learning_rate=0.05, max_depth=10, random_state=42)
         self.lgbm = LGBMRegressor(**config.LGBM_PARAMS)
+        self.et = ExtraTreesRegressor(n_estimators=30, max_depth=8, random_state=42, n_jobs=-1)
         self.catboost = CatBoostRegressor(**config.CATBOOST_PARAMS)
         self.xgboost = XGBRegressor(**config.XGBOOST_PARAMS)
 
         self.fitted = False
 
     def fit(self, X: pd.DataFrame, y_residual: pd.Series):
-        self.hgb.fit(X, y_residual)
         self.lgbm.fit(X, y_residual)
+        self.et.fit(X, y_residual)
         self.catboost.fit(X, y_residual)
         self.xgboost.fit(X, y_residual)
         self.fitted = True
@@ -34,19 +34,19 @@ class FreightRateEnsemble:
         if not self.fitted:
             raise RuntimeError("Model ensemble must be fitted before predict()")
 
-        res_hgb = self.hgb.predict(X)
         res_lgb = self.lgbm.predict(X)
+        res_et = self.et.predict(X)
         res_cat = self.catboost.predict(X)
         res_xgb = self.xgboost.predict(X)
 
-        w_hgb = self.weights.get("hgb", 0.50)
-        w_lgb = self.weights.get("lgbm", 0.25)
+        w_lgb = self.weights.get("lgbm", 0.45)
+        w_et = self.weights.get("et", 0.30)
         w_cat = self.weights.get("catboost", 0.15)
         w_xgb = self.weights.get("xgboost", 0.10)
 
         ensemble_res = (
-            w_hgb * res_hgb
-            + w_lgb * res_lgb
+            w_lgb * res_lgb
+            + w_et * res_et
             + w_cat * res_cat
             + w_xgb * res_xgb
         )

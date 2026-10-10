@@ -24,8 +24,13 @@ RUN pip install --no-cache-dir --upgrade pip && \
 RUN adduser --disabled-password --gecos "" appuser && \
     chown -R appuser:appuser /app
 
-# Copy application source code and model artifacts
+# Copy application source code (excluding any pre-built Windows artifacts)
 COPY --chown=appuser:appuser . .
+
+# Retrain the model inside Docker using the container's own sklearn version.
+# This prevents the "No module named '_loss'" joblib/sklearn version mismatch
+# that occurs when a model artifact is serialized on a different sklearn version.
+RUN python -m src.train
 
 USER appuser
 
